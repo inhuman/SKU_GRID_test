@@ -14,7 +14,14 @@ type ResultJson struct {
 	} `json:"meta"`
 }
 
+type UrlsToProcess struct {
+	Urls Urls
+}
+
+var urlsToProcess UrlsToProcess
 
 func AddUrls(urls Urls) {
+
+	urlsToProcess.Urls = append(urlsToProcess.Urls, urls...)
 
 }
