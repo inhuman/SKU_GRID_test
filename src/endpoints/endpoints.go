@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"url_processor"
+	"utils"
 )
 
 
@@ -15,8 +16,10 @@ func UploadUrls(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.Write([]byte(err.Error()))
+		utils.CheckError(err)
 	} else {
 		url_processor.AddUrls(urls)
+
 	}
 }
 
