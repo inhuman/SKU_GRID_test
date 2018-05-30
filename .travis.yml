@@ -9,11 +9,6 @@ notifications:
 
 jobs:
   include:
-    - stage: test
-      script:
-      - export GOPATH="${TRAVIS_BUILD_DIR}/vendor:${TRAVIS_BUILD_DIR}"
-      - go get -v -t -d ./src/...
-      - go test -v -cover ./src/...
     - stage: build docker image
       script:
       - export SOURCE_IMAGE='alpine'
