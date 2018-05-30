@@ -3,7 +3,6 @@ package endpoints
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"fmt"
 	"encoding/json"
 	"url_processor"
 	"utils"
@@ -18,18 +17,17 @@ func UploadUrls(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		utils.CheckError(err)
 	} else {
-		url_processor.AddUrls(urls)
-
+		urlToProcess := url_processor.AddUrls(urls)
+		utils.ResponseJson(urlToProcess, w)
 	}
 }
-
 
 func GetResultById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestId :=  vars["request_id"]
-	fmt.Print(requestId)
+	utils.ResponseJson(url_processor.UrlsDone[requestId], w)
 }
 
 func GetAllResults(w http.ResponseWriter, r *http.Request) {
-
+	utils.ResponseJson(url_processor.UrlsDone, w)
 }

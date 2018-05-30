@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"utils"
 	"fmt"
-	"log"
 	"github.com/PuerkitoBio/goquery"
 	"strconv"
 	"unicode/utf8"
 	"regexp"
 	"strings"
+	"encoding/hex"
 )
 
 type Urls []string
@@ -26,37 +26,67 @@ type ResultJson struct {
 	} `json:"meta"`
 }
 
-type UrlsToProcess struct {
-	Urls map[[16]byte]string
+var urlsToProcess []UrlToProcess
+
+type UrlToProcess struct {
+	Md5 string
+	Url string
 }
 
-type UrlsDone struct {
-	Urls map[[16]byte]ResultJson
-}
+var urlsChan chan UrlToProcess
 
-var urlsToProcess UrlsToProcess
+var UrlsDone map[string]ResultJson
 
 func init() {
-	urlsToProcess.Urls = make(map[[16]byte]string)
+	UrlsDone = make(map[string]ResultJson)
+	urlsChan = make(chan UrlToProcess, 10)
 }
 
-func AddUrls(urls Urls) {
+func AddUrls(urls Urls) []UrlToProcess {
 
 	for _, url := range urls {
-		urlsToProcess.Urls[md5.Sum([]byte(url))] = url
-		ProcessUrl(url)
+
+		hasher := md5.New()
+		hasher.Write([]byte(url))
+
+		urlToProcess := UrlToProcess{}
+		urlToProcess.Md5 = hex.EncodeToString(hasher.Sum(nil))
+		urlToProcess.Url = url
+
+		urlsToProcess = append(urlsToProcess, urlToProcess)
+
+		urlsChan <- urlToProcess
+	}
+
+	return urlsToProcess
+}
+
+func Start() {
+
+	fmt.Println("Start url processor")
+
+	for {
+		select {
+		case u := <-urlsChan:
+			UrlsDone[u.Md5] = ProcessUrl(u.Url)
+		}
 	}
 }
 
-func ProcessUrl(url string) {
+
+func ProcessUrl(url string) ResultJson {
+
+	fmt.Println("Processing url", url)
 
 	var result ResultJson
 
+	result.URL = url
+
 	res, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
+
 	defer res.Body.Close()
+
 	if res.StatusCode != 200 {
 		fmt.Printf("status code error: %d %s", res.StatusCode, res.Status)
 	}
@@ -90,13 +120,12 @@ func ProcessUrl(url string) {
 
 	// find availability
 	doc.Find("#availability").Each(func(i int, s *goquery.Selection) {
-
 		avail := s.Find("span").Text()
 		result.Meta.Available = strings.TrimSpace(avail) == "In stock."
-
 	})
 
 	fmt.Printf("%+v\n", result)
+	return result
 }
 
 func trimFirstRune(s string) string {

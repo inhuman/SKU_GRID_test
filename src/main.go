@@ -4,6 +4,7 @@ import (
 	"server"
 	"router"
 	"flag"
+	"url_processor"
 )
 var port = flag.Int(
 	"port",
@@ -12,5 +13,6 @@ var port = flag.Int(
 
 func main() {
 	flag.Parse()
+	go url_processor.Start()
 	server.Start(router.GetRouter(), port)
 }
